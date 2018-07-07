@@ -19,7 +19,8 @@ extern String Rcontent;
 #define HOST "automaticsystem.herokuapp.com"
 #define WIFI_SSID "Room HKT"              //Ten wifi
 #define WIFI_PASSWORD "hoilamgi6"         //Pass wifi
-#define MOTORPIN 16
+#define MOTORPIN 16     //MOTOR phun suong
+#define MOTORPIN_2 12   //MOTOR nho giot
 #define DHTPIN 4             // Pin ket noi voi DHT
 #define DHTTYPE DHT11        // Su dung cam bien DHT11
 #define t_zero 0             //zero
@@ -41,7 +42,8 @@ SimpleTimer timer;        // Su dung timer
 float hum = 0;            //Nhiet do
 float temp = 0;           //Do am
 bool flagAuto = false;    //Che do tu dong
-bool flagMotor = false;   //Trang thai motor
+bool flagMotor = false;   //Trang thai motor 1
+bool flagMotor_2 = false; //Trang thai motor 2
 int num = 0;              //So lan lap o che do Auto
 unsigned long current = 0;//Thoi gian tinh tu luc chay chuong trinh
 unsigned long lastrun = 0;//Thoi gian tinh tu luc lan cuoi cung chay Auto
@@ -52,6 +54,10 @@ void setup() {
   Serial.begin(115200);                 // Mo Serial
   pinMode(MOTORPIN, OUTPUT);
   digitalWrite(MOTORPIN, HIGH);
+  pinMode(MOTORPIN_2, OUTPUT);
+  digitalWrite(MOTORPIN_2, HIGH);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
   dht.begin();                          // Khoi tao DHT
 
   //Connect to wifi.
@@ -129,6 +135,15 @@ void loop() {
       int h = Rcontent.substring(index+1).toInt();
       float result = progressTime(t, h);
       Serial.println("\nTime: " + String(result, 1));
+    } else if (RID == "serversendmodel_4"){
+      //On/off motor 2
+      if (Rcontent == "on"){
+        onMotor_2();
+      } else {
+        offMotor_2();
+      }
+      Serial.print("\n\nMotor_2 Status: ");
+      Serial.println(Rcontent);
     }
   }
 
@@ -178,6 +193,18 @@ void offMotor(){
     sendStatus();
 }
 
+void onMotor_2(){
+  flagMotor_2 = true;
+  digitalWrite(MOTORPIN_2, LOW);
+  sendStatus();
+}
+
+void offMotor_2(){
+    flagMotor_2 = false;
+    digitalWrite(MOTORPIN_2, HIGH);
+    sendStatus();
+}
+
 void login(){
   StaticJsonBuffer<200> jsonBuffer;
   String JSON;
@@ -202,6 +229,7 @@ void sendStatus(){
   StaticJsonBuffer<200> jsonBuffer;
   String JSON;
   JsonObject& root = jsonBuffer.createObject();
+  root["motor_2"] = flagMotor_2? "on" : "off";
   root["motor"] = flagMotor? "on" : "off";
   root["auto"] = flagAuto? "on" : "off";
   root.printTo(JSON);
